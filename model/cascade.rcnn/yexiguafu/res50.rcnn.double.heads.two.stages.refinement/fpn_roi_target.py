@@ -2,18 +2,23 @@
 import megengine as mge
 import megengine.random as rand
 import megengine.functional as F
+
 import numpy as np
 from config import config
-from det_opr.bbox_opr import box_overlap_opr, bbox_transform_opr, box_overlap_ignore_opr
+# from det_opr.utils import mask_to_inds
+from bbox_opr import box_overlap_opr, bbox_transform_opr, box_overlap_ignore_opr
 import pdb
 
 def fpn_roi_target(rpn_rois, im_info, gt_boxes, fg_threshold = config.fg_threshold, top_k=1):
+    # return_rois = []
+    # return_labels = []
 
     return_rois, return_labels = [], []
     return_bbox_targets = []
     # get per image proposals and gt_boxes
     batch_per_gpu = im_info.shape[0]
-    sampling = True 
+    #sampling = fg_threshold <= 0.5
+    sampling = True
     # is_sample = True if top_k < 2 else False
     for bid in range(batch_per_gpu):
 

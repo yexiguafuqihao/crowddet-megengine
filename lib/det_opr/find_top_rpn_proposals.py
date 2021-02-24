@@ -1,11 +1,12 @@
 import megengine as mge
 import megengine.functional as F
-from megengine.core import tensor
-
-from layers.nms import gpu_nms
+from megengine import tensor
+import numpy as np
+from megengine.functional.nn import nms
 from config import config
 from det_opr.bbox_opr import bbox_transform_inv_opr, clip_boxes_opr, \
-    filter_boxes_opr
+    filter_boxes_opr, box_overlap_opr
+import pdb
 
 def find_top_rpn_proposals(is_train, rpn_bbox_offsets_list, rpn_cls_prob_list,
         all_anchors_list, im_info):
@@ -22,50 +23,64 @@ def find_top_rpn_proposals(is_train, rpn_bbox_offsets_list, rpn_cls_prob_list,
 
     list_size = len(rpn_bbox_offsets_list)
 
-    return_rois = []
-    return_probs = []
+    return_rois, return_probs = [], []
+    batch_per_gpu = rpn_cls_prob_list[0].shape[0]
     for bid in range(batch_per_gpu):
         batch_proposals_list = []
         batch_probs_list = []
         for l in range(list_size):
             # get proposals and probs
             offsets = rpn_bbox_offsets_list[l][bid] \
-                .dimshuffle(1, 2, 0).reshape(-1, 4)
+                .transpose(1, 2, 0).reshape(-1, 4)
             if bbox_normalize_targets:
                 std_opr = tensor(config.bbox_normalize_stds[None, :])
                 mean_opr = tensor(config.bbox_normalize_means[None, :])
                 pred_offsets = pred_offsets * std_opr
                 pred_offsets = pred_offsets + mean_opr
             all_anchors = all_anchors_list[l]
+
             proposals = bbox_transform_inv_opr(all_anchors, offsets)
             if config.anchor_within_border:
                 proposals = clip_boxes_opr(proposals, im_info[bid, :])
             probs = rpn_cls_prob_list[l][bid] \
-                    .dimshuffle(1,2,0).reshape(-1, 2)
+                    .transpose(1,2,0).reshape(-1, 2)
             probs = F.softmax(probs)[:, 1]
             # gather the proposals and probs
             batch_proposals_list.append(proposals)
             batch_probs_list.append(probs)
+
+        
         batch_proposals = F.concat(batch_proposals_list, axis=0)
         batch_probs = F.concat(batch_probs_list, axis=0)
-        # filter the zero boxes.
-        batch_keep_mask = filter_boxes_opr(
-                batch_proposals, box_min_size * im_info[bid, 2])
-        batch_probs = batch_probs * batch_keep_mask
+        # filter the boxes with small size.
+        wh = batch_proposals[:, 2:4] - batch_proposals[:, :2] + 1
+        thresh = box_min_size * im_info[bid, 2]
+        keep_mask = F.prod((wh >= thresh), axis=1)
+        keep_mask = keep_mask + F.equal(keep_mask.sum(), 0)
+        keep_mask, inds = F.cond_take(keep_mask > 0, keep_mask)
+
+        inds = inds.astype(np.int32)
+        # batch_proposals = F.nn.indexing_one_hot(batch_proposals, inds, 0)
+        # batch_probs = F.nn.indexing_one_hot(batch_probs, inds, 0)
+        batch_proposals, batch_probs = batch_proposals[inds], batch_probs[inds]
+
         # prev_nms_top_n
-        num_proposals = F.minimum(prev_nms_top_n, batch_probs.shapeof()[0])
-        batch_probs, idx = F.argsort(batch_probs, descending=True)
-        batch_probs = batch_probs[:num_proposals].reshape(-1,1)
+        num_proposals = F.minimum(prev_nms_top_n, batch_proposals.shape[0])
+        idx = F.argsort(batch_probs, descending=True)
         topk_idx = idx[:num_proposals].reshape(-1)
-        batch_proposals = batch_proposals.ai[topk_idx]
-        batch_rois = F.concat([batch_proposals, batch_probs], axis=1)
+        batch_proposals = batch_proposals[topk_idx].detach()
+        batch_probs = batch_probs[topk_idx].detach()
+        
         # For each image, run a total-level NMS, and choose topk results.
-        keep_inds = gpu_nms(batch_rois, nms_threshold, post_nms_top_n)
-        batch_rois = batch_rois.ai[keep_inds]
-        batch_probs = batch_rois[:, -1]
+        keep_inds = nms(batch_proposals, batch_probs, nms_threshold, max_output = post_nms_top_n)
+        # num = F.minimum(post_nms_top_n, keep_inds.shape[0])
+        # keep_inds = keep_inds[:num]
+
+        batch_rois, batch_probs = batch_proposals[keep_inds], batch_probs[keep_inds]
+
         # cons the rois
-        batch_inds = mge.ones((batch_rois.shapeof()[0], 1)) * bid
-        batch_rois = F.concat([batch_inds, batch_rois[:, :-1]], axis=1)
+        batch_inds = F.ones((batch_rois.shape[0], 1)) * bid
+        batch_rois = F.concat([batch_inds, batch_rois[:, :4]], axis=1)
         return_rois.append(batch_rois)
         return_probs.append(batch_probs)
 

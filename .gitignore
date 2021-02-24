@@ -3,3 +3,9 @@
 *.sh
 __pycache__
 .DS_Store
+*.mge
+*.pkl
+*.log
+search.py
+model/cascade.rcnn/yexiguafu/res50.rcnn.double.heads.two.stages.refinement/utils
+model/cascade.rcnn/yexiguafu/res50.rcnn.double.heads.two.stages.refinement/lib

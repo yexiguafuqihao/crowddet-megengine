@@ -2,7 +2,6 @@ import math
 import numpy as np
 import megengine as mge
 import megengine.functional as F
-# from det_opr.utils import mask_to_inds
 import pdb
 def roi_pool(rpn_fms, rois, stride, pool_shape, roi_type='roi_align', 
              labels=None, bbox_targets=None):

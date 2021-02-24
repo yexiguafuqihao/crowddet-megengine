@@ -1,10 +1,11 @@
 import math
+import megengine as mge
 import megengine.functional as F
 import numpy as np
 from megengine import Tensor
 import pdb
 
-def restore_bbox(rois, deltas, unnormalize=True):
+def restore_bbox(rois, deltas, unnormalize=True, config = None):
 
     assert deltas.ndim == 3
     if unnormalize:
