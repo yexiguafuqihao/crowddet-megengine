@@ -9,3 +9,4 @@ __pycache__
 search.py
 model/cascade.rcnn/yexiguafu/res50.rcnn.double.heads.two.stages.refinement/utils
 model/cascade.rcnn/yexiguafu/res50.rcnn.double.heads.two.stages.refinement/lib
+model/rcnn/yexiguafu/res50.rcnn.one.head.nms/lib

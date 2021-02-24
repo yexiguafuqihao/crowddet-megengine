@@ -28,7 +28,6 @@ class Config:
     this_model_dir = osp.split(osp.split(osp.realpath(__file__))[0])[-1]
     workspace = osp.split(osp.realpath(__file__))[0]
     output_dir = osp.join(root_dir, 'output', usr, 'cascade.rcnn', this_model_dir)
-    output_dir = 'output'
     model_dir = osp.join(output_dir, 'model_dump')
     eval_dir = osp.join(output_dir, 'eval_dump')
 
@@ -71,7 +70,7 @@ class Config:
 
     # ----------test config---------- #
     test_cls_threshold = 0.05
-    test_nms_version = 'original'
+    test_nms_version = 'normal_nms'
     test_max_boxes_per_image = 300 #200
     test_save_type = 'human'
     test_nms = 0.5
@@ -80,6 +79,7 @@ class Config:
     # ----------model config---------- #
     batch_filter_box_size = 0
     nr_box_dim = 5
+    nr_info_dim = 6
     ignore_label = -1
     max_boxes_of_image = 500
 
