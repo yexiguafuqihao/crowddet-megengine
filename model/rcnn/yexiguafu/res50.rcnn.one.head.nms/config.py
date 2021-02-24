@@ -92,7 +92,7 @@ class Config:
     train_prev_nms_top_n = 12000
     train_post_nms_top_n = 2000
     test_prev_nms_top_n = 6000
-    test_post_nms_top_n = 1000
+    test_post_nms_top_n = 1500
 
     # ----------binding&training config---------- #
     rpn_smooth_l1_beta = 1

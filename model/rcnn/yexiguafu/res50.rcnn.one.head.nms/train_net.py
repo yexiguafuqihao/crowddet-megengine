@@ -1,21 +1,25 @@
 import os
 import os.path as osp
-import bisect, time
+import bisect
 import argparse
 import multiprocessing as mp
+import time
 import numpy as np
 from tqdm import tqdm
 import megengine as mge
 from megengine import distributed as dist
 from megengine import optimizer as optim
 import megengine.autodiff as autodiff
-from megengine.core._imperative_rt.utils import Logger
 from megengine import jit
-from config import config as cfg
-from dataset import dataset
+# import dataset
 import network
+from config import config as cfg
+from dataset.CrowdHuman import CrowdHuman
 from misc_utils import ensure_dir
+from megengine.core._imperative_rt.utils import Logger
+from megengine import data
 import pdb
+
 ensure_dir(cfg.output_dir)
 logger = mge.get_logger(__name__)
 log_path = osp.join(cfg.output_dir, 'logger.log')
@@ -45,8 +49,8 @@ def train_one_epoch(model, gm, data_iter, opt, max_steps, rank, epoch_id, gpu_nu
             opt.step().clear_grad()
             loss_dict['total_loss'] = total_loss
         return loss_dict
-    workspace = osp.split(osp.realpath(__file__))[0]
     tic = time.time()
+    workspace = osp.split(osp.realpath(__file__))[0]
     for step in range(max_steps):
         # learing rate
         if epoch_id == 0 and step < cfg.warm_iters:
@@ -58,14 +62,13 @@ def train_one_epoch(model, gm, data_iter, opt, max_steps, rank, epoch_id, gpu_nu
             lr_factor = (step + 1.0) / cfg.warm_iters
             for param_group in opt.param_groups:
                 param_group["lr"] = 0.33 * base_lr + 0.67 * lr_factor * base_lr
-        mini_batch = next(data_iter)
-        im_info = mini_batch["im_info"]
-        image = mini_batch["data"][:, :, :int(im_info[0, 0]), :int(im_info[0, 1])]
+        
+        image, boxes, im_info = next(data_iter)
         model.inputs["image"].set_value(image)
-        model.inputs["gt_boxes"].set_value(mini_batch["boxes"])
-        model.inputs["im_info"].set_value(mini_batch["im_info"])
+        model.inputs["gt_boxes"].set_value(boxes)
+        model.inputs["im_info"].set_value(im_info)
         m = image.shape[0]
-        del mini_batch, image
+        del image, boxes, im_info
         losses = propagate()
 
         print_str = ' '
@@ -74,9 +77,10 @@ def train_one_epoch(model, gm, data_iter, opt, max_steps, rank, epoch_id, gpu_nu
         
         if rank == 0:
             if step % cfg.log_dump_interval == 0:
-                speed = m * cfg.log_dump_interval / (time.time() - tic)
+                speed = cfg.log_dump_interval * m / (time.time() - tic)
+                tic = time.time()
                 logger.info(
-                    "epoch-{}, {}/{}, speed:{:.2f} mb/s, lr: {:.4f},{}\n{}".format(
+                    "epoch-{}, {}/{}, speed:{:.3f} mb/s, lr: {:.4f}{}.\n{}".format(
                     epoch_id,
                     step,
                     max_steps,
@@ -86,7 +90,6 @@ def train_one_epoch(model, gm, data_iter, opt, max_steps, rank, epoch_id, gpu_nu
                     workspace,
                     )
                 )
-                tic = time.time()
 
 def worker(rank, gpu_num, args):
     # using sublinear
@@ -117,7 +120,6 @@ def worker(rank, gpu_num, args):
     gm = autodiff.GradManager().attach(
         model.parameters(),
         callbacks=allreduce_cb,
-        # callbacks=dist.make_allreduce_cb("MEAN"),
     )
 
     opt = optim.SGD(
@@ -132,11 +134,33 @@ def worker(rank, gpu_num, args):
         del weights['fc.weight']
         del weights['fc.bias']
         model.resnet50.load_state_dict(weights)
+
+    start_epoch = 0
+    if args.resume_weights is not None:
+        assert osp.exists(args.resume_weights)
+        model_file = args.resume_weights
+        print('Loading {} to initialize FPN...'.format(model_file))
+        model_dict = mge.load(model_file)
+        start_epoch, weights = model_dict['epoch'] + 1, model_dict['state_dict']
+        model.load_state_dict(weights, strict=False)
     
     logger.info("Prepare dataset")
-    train_loader = dataset.train_dataset(rank)
+    # train_loader = dataset.train_dataset(rank)
+
+    train_dataset = CrowdHuman(cfg, if_train=True)
+    train_sampler = data.Infinite(data.RandomSampler(
+        train_dataset, batch_size = cfg.batch_per_gpu, drop_last=True,
+        world_size = gpu_num, rank = rank,))
+    train_loader = data.DataLoader(
+        train_dataset,
+        sampler=train_sampler,
+        collator = train_dataset,
+        num_workers=4,
+    )
+    
+    train_loader = iter(train_loader)
     logger.info("Training...")
-    for epoch_id in range(cfg.max_epoch):
+    for epoch_id in range(start_epoch, cfg.max_epoch):
         for param_group in opt.param_groups:
             param_group["lr"] = (
                 cfg.basic_lr * gpu_num * cfg.batch_per_gpu
@@ -165,12 +189,11 @@ def train(args):
     assert gpu_num > 0
     logger.info('Device Count: {}'.format(gpu_num))
 
-    # model_dir = cfg.model_dir
-    # if not osp.exists(model_dir):
-    #     os.makedirs(model_dir)
     ensure_dir(cfg.model_dir)
+
     if not osp.exists('output'):
         os.symlink(cfg.output_dir,'output')
+
     if gpu_num > 1:
         args.port =find_free_port()
         mp.set_start_method("spawn")
