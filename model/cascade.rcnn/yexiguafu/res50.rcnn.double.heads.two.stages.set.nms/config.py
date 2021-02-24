@@ -28,7 +28,7 @@ class Config:
     this_model_dir = osp.split(osp.split(osp.realpath(__file__))[0])[-1]
     workspace = osp.split(osp.realpath(__file__))[0]
     output_dir = osp.join(root_dir, 'output', usr, 'cascade.rcnn', this_model_dir)
-    output_dir = 'output'
+    #output_dir = 'output'
     model_dir = osp.join(output_dir, 'model_dump')
     eval_dir = osp.join(output_dir, 'eval_dump')
 
@@ -62,7 +62,7 @@ class Config:
     weight_decay = 1e-4
 
     warm_iters = 800
-    max_epoch = 30
+    max_epoch = 35
     lr_decay_rate = 0.1
     lr_decay_sates = [20, 26]
     nr_images_epoch = 15000
@@ -81,6 +81,7 @@ class Config:
     # ----------model config---------- #
     batch_filter_box_size = 0
     nr_box_dim = 5
+    nr_info_dim = 6
     ignore_label = -1
     max_boxes_of_image = 500
 
