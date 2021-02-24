@@ -11,7 +11,6 @@ from megengine import distributed as dist
 from megengine import optimizer as optim
 import megengine.autodiff as autodiff
 from megengine import jit
-# import dataset
 import network
 from config import config as cfg
 from dataset.CrowdHuman import CrowdHuman
