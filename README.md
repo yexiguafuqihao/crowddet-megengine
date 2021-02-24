@@ -53,7 +53,7 @@ year = {2020}
     python3 demo.py
     ```
 
-# Models
+<!-- # Models
 
 This proiect is a re-implementation based on Pytorch.
 We use pre-trained model from [MegEngine Model Hub](https://megengine.org.cn/model-hub) and convert this model to pytorch. You can get this model from [GoogleDrive](https://drive.google.com/file/d/1lfYQHC63oM2Dynbfj6uD7XnpDIaA5kNr/view?usp=sharing) or [Baidu Netdisk](https://pan.baidu.com/s/1U3I-qNIrXuYQzUEDDdISTw)(code:yx46).
@@ -72,4 +72,4 @@ All models are re-trained based on [ResNet-50](https://arxiv.org/pdf/1512.03385.
 | Cascade FPN RCNN EMD Simple  | 0.9048 | 0.4022 | 0.8314 | [cascade_rcnn_emd_simple.pth](https://drive.google.com/file/d/1dCDN5ntfSm_940O2pe7spQ20u2sjVhZ5/view?usp=sharing) |
 | Cascade FPN RCNN EMD with RM | 0.9047 | 0.3987 | 0.8272 | [cascade_rcnn_emd_refine.pth](https://drive.google.com/file/d/1WtpH4WZmqdFoGyyhQ-hda213QmhNXWVz/view?usp=sharing) |
 | RetinaNet FPN Baseline | 0.8793 | 0.4753 | 0.7729 | [retinanet_baseline.pth](https://drive.google.com/file/d/10oYq6gjcW8UQysZK5lML0ahWBzH-yHBS/view?usp=sharing) |
-| RetinaNet Simple       | 0.8988 | 0.4779 | 0.7931 | [retinanet_simple.pth](https://drive.google.com/file/d/10oYq6gjcW8UQysZK5lML0ahWBzH-yHBS/view?usp=sharing)
+| RetinaNet Simple       | 0.8988 | 0.4779 | 0.7931 | [retinanet_simple.pth](https://drive.google.com/file/d/10oYq6gjcW8UQysZK5lML0ahWBzH-yHBS/view?usp=sharing) -->
