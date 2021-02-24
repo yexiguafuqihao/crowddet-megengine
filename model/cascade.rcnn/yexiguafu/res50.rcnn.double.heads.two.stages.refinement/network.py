@@ -322,7 +322,6 @@ class RCNN(M.Module):
         
         else:
 
-            # boxes_pred = self._forward_test(fpn_fms, rcnn_rois)
             for i, _ in enumerate(self.iou_thrs):
                 prob = self.subnets[i](fpn_fms, rcnn_rois)
                 rois = prob[:,1]
@@ -336,35 +335,6 @@ class RCNN(M.Module):
 
                 rcnn_rois = F.concat(rcnn_list,axis=0)
             return prob[:,:,:5]
-    
-    # def compute_emd_loss(self, a, b, bbox_targets, labels):
-
-    #     c = a.shape[1]
-    #     prob = F.stack([a, b], axis = 1).reshape(-1, c)
-    #     pred_bbox, cls_scores = prob[:,:-self.n], prob[:,-self.n:]
-    #     n, c = bbox_targets.shape[0], bbox_targets.shape[1]
-    #     bbox_targets, labels = bbox_targets.reshape(-1, 4), labels.flatten()
-
-    #     cls_loss = softmax_loss_opr(cls_scores, labels)
-    #     pred_bbox = pred_bbox.reshape(-1, self.n, 4)
-    #     rcnn_bbox_loss = smooth_l1_loss_rcnn_opr(pred_bbox, bbox_targets, labels,
-    #         config.rcnn_smooth_l1_beta)
-    #     loss = cls_loss + rcnn_bbox_loss
-    #     loss = loss.reshape(-1, 2).sum(axis=1)
-    #     return loss
-
-    # def compute_gemini_loss(self, prob, bbox_targets, labels):
-
-    #     c = prob.shape[1]
-    #     prob = prob.reshape(-1, 2, c).transpose(1, 0, 2)
-    #     a, b = prob[0], prob[1]
-    #     loss0 = self.compute_emd_loss(a, b, bbox_targets, labels)
-    #     loss1 = self.compute_emd_loss(b, a, bbox_targets, labels)
-    #     loss = F.stack([loss0, loss1], axis=1)
-    #     vlabel = (labels > -1).reshape(-1, 2).sum(axis=1) > 1
-    #     emd_loss = loss.min(axis=1).sum() / F.maximum(vlabel.sum(), 1)
-    #     return emd_loss
-
 
 class FPN(M.Module):
     """
