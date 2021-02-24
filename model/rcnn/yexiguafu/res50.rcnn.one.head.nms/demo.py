@@ -22,10 +22,7 @@ def computeIoUs(fpath):
     print('Evaluating {}'.format(osp.basename(fpath)))
     name = os.path.basename(fpath)
 
-    fpath = 'final.human'
-    save_results(records, fpath)
     mAP, mMR = compute_mAP(fpath)
-
     fid = open('results.md', 'a')
     fid.write('{}\ndtboxes:\n'.format(name))
     print('{}\ndtboxes:\n'.format(name))
