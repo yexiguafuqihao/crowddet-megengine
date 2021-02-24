@@ -133,13 +133,3 @@ def iou_l1_loss(pred, max_overlaps, gt, ignore_label=-1, background=0):
     mask = mask.reshape(mask.shape[0], -1, pred.shape[2])
     loss = (abs_x * mask).sum() / F.maximum(mask.sum(), 1)
     return loss
-def smooth_l1_loss_rcnn(
-        pred, gt, label, sigma = 1, background=0, ignore_label=-1):
-    """
-        pred    : (minibatch, class_num, 4)
-        gt      : (minibatch, 4)
-        label   : (minibatch,  )
-    """
-    loss = smooth_l1_loss_rcnn_opr(pred, gt, label, sigma)
-    loss = loss.sum()/F.maximum((label > 0).sum(), 1)
-    return loss
