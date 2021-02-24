@@ -19,10 +19,9 @@ def computeJaccard(fpath, save_path ='results.md'):
 
 def computeIoUs(fpath):
     
+    name = osp.basename(fpath)
     print('Evaluating...'.format(name))
-    name = os.path.basename(fpath)
 
-    save_results(records, fpath)
     mAP, mMR = compute_mAP(fpath)
 
     fid = open('results.md', 'a')
