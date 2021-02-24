@@ -347,8 +347,6 @@ class FPN(M.Module):
         fpn_dim = 256
         use_bias =True
 
-        # lateral_convs = list()
-        # output_convs = list()
         lateral_convs, output_convs = [], []
         for idx, in_channels in enumerate(in_channels):
             lateral_conv = M.Conv2d(
