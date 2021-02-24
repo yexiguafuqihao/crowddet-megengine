@@ -32,6 +32,7 @@ def computeIoUs(fpath):
     computeJaccard(fpath)
 
 def eval_all():
+    
     for epoch in range(20, 40):
         fpath = osp.join(config.eval_dir, 'epoch-{}.human'.format(epoch))
         if not os.path.exists(fpath):

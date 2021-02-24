@@ -11,12 +11,11 @@ from megengine import distributed as dist
 from megengine import optimizer as optim
 import megengine.autodiff as autodiff
 from megengine import jit
-import network
 from config import config as cfg
-from dataset.CrowdHuman import CrowdHuman
+from dataset import dataset
+import network
 from misc_utils import ensure_dir
 from megengine.core._imperative_rt.utils import Logger
-from megengine import data
 import pdb
 
 ensure_dir(cfg.output_dir)
@@ -61,13 +60,14 @@ def train_one_epoch(model, gm, data_iter, opt, max_steps, rank, epoch_id, gpu_nu
             lr_factor = (step + 1.0) / cfg.warm_iters
             for param_group in opt.param_groups:
                 param_group["lr"] = 0.33 * base_lr + 0.67 * lr_factor * base_lr
-        
-        image, boxes, im_info = next(data_iter)
+        mini_batch = next(data_iter)
+        im_info = mini_batch["im_info"]
+        image = mini_batch["data"][:, :, :int(im_info[0, 0]), :int(im_info[0, 1])]
         model.inputs["image"].set_value(image)
-        model.inputs["gt_boxes"].set_value(boxes)
-        model.inputs["im_info"].set_value(im_info)
+        model.inputs["gt_boxes"].set_value(mini_batch["boxes"])
+        model.inputs["im_info"].set_value(mini_batch["im_info"])
         m = image.shape[0]
-        del image, boxes, im_info
+        del mini_batch, image
         losses = propagate()
 
         print_str = ' '
@@ -144,20 +144,7 @@ def worker(rank, gpu_num, args):
         model.load_state_dict(weights, strict=False)
     
     logger.info("Prepare dataset")
-    # train_loader = dataset.train_dataset(rank)
-
-    train_dataset = CrowdHuman(cfg, if_train=True)
-    train_sampler = data.Infinite(data.RandomSampler(
-        train_dataset, batch_size = cfg.batch_per_gpu, drop_last=True,
-        world_size = gpu_num, rank = rank,))
-    train_loader = data.DataLoader(
-        train_dataset,
-        sampler=train_sampler,
-        collator = train_dataset,
-        num_workers=4,
-    )
-    
-    train_loader = iter(train_loader)
+    train_loader = dataset.train_dataset(rank)
     logger.info("Training...")
     for epoch_id in range(start_epoch, cfg.max_epoch):
         for param_group in opt.param_groups:

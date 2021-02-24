@@ -181,7 +181,6 @@ def run_test():
         model_file = osp.join(model_dir, 'epoch-{}.pkl'.format(epoch))
         if not osp.exists(model_file):
             continue
-
         results = eval_all(model_file, records, args)
         
         fpath = osp.join(eval_dir, 'epoch-{}.human'.format(epoch))

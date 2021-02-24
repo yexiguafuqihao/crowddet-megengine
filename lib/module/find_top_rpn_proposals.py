@@ -6,8 +6,8 @@ from megengine.functional.nn import nms
 from config import config
 from det_opr.bbox_opr import bbox_transform_inv_opr, clip_boxes_opr, \
     filter_boxes_opr, box_overlap_opr
+# from bbox_opr import box_overlap_opr
 import pdb
-
 def find_top_rpn_proposals(is_train, rpn_bbox_offsets_list, rpn_cls_prob_list,
         all_anchors_list, im_info):
     prev_nms_top_n = config.train_prev_nms_top_n \
@@ -72,7 +72,7 @@ def find_top_rpn_proposals(is_train, rpn_bbox_offsets_list, rpn_cls_prob_list,
         batch_probs = batch_probs[topk_idx].detach()
         
         # For each image, run a total-level NMS, and choose topk results.
-        keep_inds = nms(batch_proposals, batch_probs, nms_threshold, max_output = post_nms_top_n)
+        keep_inds = nms(batch_proposals, batch_probs, nms_threshold, max_output = 2000)
         # num = F.minimum(post_nms_top_n, keep_inds.shape[0])
         # keep_inds = keep_inds[:num]
 

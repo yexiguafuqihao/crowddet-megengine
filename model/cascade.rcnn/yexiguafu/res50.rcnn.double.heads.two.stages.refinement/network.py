@@ -1,3 +1,4 @@
+import os, sys
 import numpy as np
 import megengine as mge
 import megengine.functional as F
@@ -11,20 +12,70 @@ from det_opr.loss_opr import softmax_loss_opr, smooth_l1_loss_rcnn_opr, softmax_
 from det_opr.utils import get_padded_tensor
 from det_opr.bbox_opr import restore_bbox, bbox_transform_inv_opr
 import pdb
+
+class FPN(M.Module):
+    """
+    This module implements Feature Pyramid Network.
+    It creates pyramid features built on top of some input feature maps.
+    """
+    def __init__(self, bottom_up):
+        super(FPN, self).__init__()
+        in_channels = [256, 512, 1024, 2048]
+        fpn_dim = 256
+        use_bias =True
+
+        lateral_convs, output_convs = [], []
+        for idx, in_channels in enumerate(in_channels):
+            lateral_conv = M.Conv2d(
+                in_channels, fpn_dim, kernel_size=1, bias=use_bias)
+            output_conv = M.Conv2d(
+                fpn_dim, fpn_dim, kernel_size=3, stride=1, padding=1, bias=use_bias)
+            M.init.msra_normal_(lateral_conv.weight, mode="fan_in")
+            M.init.msra_normal_(output_conv.weight, mode="fan_in")
+            if use_bias:
+                M.init.fill_(lateral_conv.bias, 0)
+                M.init.fill_(output_conv.bias, 0)
+            lateral_convs.append(lateral_conv)
+            output_convs.append(output_conv)
+
+        self.lateral_convs = lateral_convs[::-1]
+        self.output_convs = output_convs[::-1]
+        self.bottom_up = bottom_up
+
+    def forward(self, x):
+        bottom_up_features = self.bottom_up(x)
+        bottom_up_features = bottom_up_features[::-1]
+        results = []
+        prev_features = self.lateral_convs[0](bottom_up_features[0])
+        results.append(self.output_convs[0](prev_features))
+        for features, lateral_conv, output_conv in zip(
+            bottom_up_features[1:], self.lateral_convs[1:], self.output_convs[1:]
+        ):
+            fh, fw = features.shape[2:]
+            top_down_features = F.nn.interpolate(
+                prev_features, size = (fh, fw), mode="BILINEAR")
+            lateral_features = lateral_conv(features)
+            prev_features = lateral_features + top_down_features
+            results.append(output_conv(prev_features))
+        # p6
+        last_p6 = F.max_pool2d(results[0], kernel_size=1, stride=2, padding=0)
+        results.insert(0, last_p6)
+        return results
+
 class Network(M.Module):
     def __init__(self):
+        
         super().__init__()
         # ----------------------- build the backbone ------------------------ #
         self.resnet50 = ResNet50()
         # ------------ freeze the weights of resnet stage1 and stage 2 ------ #
         if config.backbone_freeze_at >= 1:
             for p in self.resnet50.conv1.parameters():
-                # p.requires_grad = False
                 p = p.detach()
         if config.backbone_freeze_at >= 2:
             for p in self.resnet50.layer1.parameters():
-                # p.requires_grad = False
                 p = p.detach()
+
         # -------------------------- build the FPN -------------------------- #
         self.backbone = FPN(self.resnet50)
         # -------------------------- build the RPN -------------------------- #
@@ -322,6 +373,7 @@ class RCNN(M.Module):
         
         else:
 
+            # boxes_pred = self._forward_test(fpn_fms, rcnn_rois)
             for i, _ in enumerate(self.iou_thrs):
                 prob = self.subnets[i](fpn_fms, rcnn_rois)
                 rois = prob[:,1]
@@ -336,51 +388,127 @@ class RCNN(M.Module):
                 rcnn_rois = F.concat(rcnn_list,axis=0)
             return prob[:,:,:5]
 
-class FPN(M.Module):
-    """
-    This module implements Feature Pyramid Network.
-    It creates pyramid features built on top of some input feature maps.
-    """
-    def __init__(self, bottom_up):
-        super(FPN, self).__init__()
-        in_channels = [256, 512, 1024, 2048]
-        fpn_dim = 256
-        use_bias =True
 
-        lateral_convs, output_convs = [], []
-        for idx, in_channels in enumerate(in_channels):
-            lateral_conv = M.Conv2d(
-                in_channels, fpn_dim, kernel_size=1, bias=use_bias)
-            output_conv = M.Conv2d(
-                fpn_dim, fpn_dim, kernel_size=3, stride=1, padding=1, bias=use_bias)
-            M.init.msra_normal_(lateral_conv.weight, mode="fan_in")
-            M.init.msra_normal_(output_conv.weight, mode="fan_in")
-            if use_bias:
-                M.init.fill_(lateral_conv.bias, 0)
-                M.init.fill_(output_conv.bias, 0)
-            lateral_convs.append(lateral_conv)
-            output_convs.append(output_conv)
+    # def _recover_dtboxes(self, rois, prob, nheads):
 
-        self.lateral_convs = lateral_convs[::-1]
-        self.output_convs = output_convs[::-1]
-        self.bottom_up = bottom_up
+    #     n = prob.shape[0]
+    #     prob = prob.reshape(n, nheads, -1)
+    #     prob = prob.reshape(-1, prob.shape[2])
+    #     offsets, cls_scores = prob[:, :-self.n], prob[:, -self.n:]
+    #     rois = F.broadcast_to(F.expand_dims(rois, 1), (rois.shape[0], nheads,
+    #         rois.shape[1])).reshape(-1, rois.shape[1])
+    #     offsets = offsets.reshape(-1, self.n, 4)
+    #     pred_bbox = restore_bbox(rois[:, 1:5], offsets, config=config)
+    #     bids = F.broadcast_to(F.expand_dims(rois[:, :1], axis=1), (n, self.n, 1))
+    #     cls_prob = F.softmax(cls_scores, axis=1)
+    #     pred_boxes = F.concat([bids, pred_bbox, F.expand_dims(cls_prob, 2)], axis=2)
+        
+    #     return pred_boxes
 
-    def forward(self, x):
-        bottom_up_features = self.bottom_up(x)
-        bottom_up_features = bottom_up_features[::-1]
-        results = []
-        prev_features = self.lateral_convs[0](bottom_up_features[0])
-        results.append(self.output_convs[0](prev_features))
-        for features, lateral_conv, output_conv in zip(
-            bottom_up_features[1:], self.lateral_convs[1:], self.output_convs[1:]
-        ):  
-            fh, fw = features.shape[2:]
-            top_down_features = F.nn.interpolate(
-                prev_features, size = (fh, fw), mode="BILINEAR")
-            lateral_features = lateral_conv(features)
-            prev_features = lateral_features + top_down_features
-            results.append(output_conv(prev_features))
-        # p6
-        last_p6 = F.max_pool2d(results[0], kernel_size=1, stride=2, padding=0)
-        results.insert(0, last_p6)
-        return results
+    # def _forward_common(self, subnet, rpn_fms, rpn_rois, nheads = 1, overlap_thr = 0.5,
+    #     sampling_rois = True, gt_boxes=None, im_info=None):
+
+    #     if self.training:
+
+    #         rcnn_rois, labels, bbox_targets = fpn_roi_target(
+    #             rpn_rois, im_info, gt_boxes, overlap_thr, sampling_rois, top_k=1)
+
+    #     stride = [4, 8, 16, 32]
+    #     pool5, rcnn_rois, labels, bbox_targets = roi_pool(
+    #             rpn_fms, rcnn_rois, stride, (7, 7), 'roi_align',
+    #             labels, bbox_targets)
+    #     pool5 = F.flatten(pool5, start_axis=1)
+    #     prob = subnet(pool5)
+
+    #     boxes_pred = self._recover_dtboxes(rcnn_rois, prob, nheads)
+    #     if self.training:
+
+    #         n, c = prob.shape
+    #         prob = prob.reshape(n, nheads, -1)
+    #         prob = prob.reshape(-1, prob.shape[2])
+
+    #         offsets, cls_scores = prob[:, :-self.n], prob[:, -self.n:]
+    #         labels = labels.flatten()
+    #         cls_loss = softmax_loss_opr(cls_scores, labels)
+    #         cls_loss = cls_loss.sum() / F.maximum((labels > -1).sum(), 1)
+
+    #         pred_boxes = offsets.reshape(-1, self.n, 4)
+
+    #         rcnn_bbox_loss = smooth_l1_loss_rcnn_opr(pred_boxes, bbox_targets, labels)
+    #         rcnn_bbox_loss = rcnn_bbox_loss.sum() / F.maximum((labels > 0).sum(), 1)
+
+    #         loss_dict = {}
+    #         name = 'stage_{:.2f}_'.format(overlap_thr)
+    #         loss_dict[name + 'cls_loss'] = cls_loss
+    #         loss_dict[name + 'rcnn_bbox_loss'] = rcnn_bbox_loss
+    #         return loss_dict, boxes_pred
+
+    #     else:
+    #         return boxes_pred
+
+    # def _forward_train(self, fpn_fms, rcnn_rois, gt_boxes, im_info):
+
+    #     rpn_fms = fpn_fms[1:]
+    #     rpn_fms.reverse()
+    #     loss_dict = {}
+    #     for i, overlap_thr in enumerate(self.iou_thrs):
+
+    #         sampling_rois = i < 2
+    #         loss, prob = self._forward_common(self.subnets[i], rpn_fms, rcnn_rois,
+    #             self.nheads[i], overlap_thr, sampling_rois, gt_boxes, im_info)
+    #         rcnn_rois = prob[:, 1, :5]
+    #         loss_dict.update(loss)
+
+    #     return loss_dict, prob[:, :, 1:]
+
+    # def _forward_test(self, fpn_fms, rcnn_rois):
+
+    #     rpn_fms = fpn_fms[1:]
+    #     rpn_fms.reverse()
+    #     for i, overlap_thr in enumerate(self.iou_thrs):
+
+    #         prob = self._forward_common(self.subnets[i], rpn_fms, rcnn_rois, self.nheads[i])
+
+    #     return prob[:, :, 1:]
+
+    
+    #         # offsets, cls_scores = prob[:, :-self.n], prob[:, -self.n:]
+    #         # pred_bbox = offsets.reshape(-1, self.n, 4)
+    #         # cls_prob = F.softmax(cls_scores, axis=1)
+    #         # n = rcnn_rois.shape[0]
+    #         # rois = F.broadcast_to(F.expand_dims(rcnn_rois[:, 1:5], axis=1), (n, 2, 4)).reshape(-1, 4)
+    #         # normalized = config.rcnn_bbox_normalize_targets
+    #         # pred_boxes = restore_bbox(rois, pred_bbox, normalized, config)
+    #         # pred_bbox = F.concat([pred_boxes, F.expand_dims(cls_prob, axis=2)], axis=2)
+    #         # return pred_bbox
+    
+    # def compute_emd_loss(self, a, b, bbox_targets, labels):
+
+    #     c = a.shape[1]
+    #     prob = F.stack([a, b], axis = 1).reshape(-1, c)
+    #     pred_bbox, cls_scores = prob[:,:-self.n], prob[:,-self.n:]
+    #     n, c = bbox_targets.shape[0], bbox_targets.shape[1]
+    #     bbox_targets, labels = bbox_targets.reshape(-1, 4), labels.flatten()
+
+    #     cls_loss = softmax_loss_opr(cls_scores, labels)
+    #     pred_bbox = pred_bbox.reshape(-1, self.n, 4)
+    #     rcnn_bbox_loss = smooth_l1_loss_rcnn_opr(pred_bbox, bbox_targets, labels,
+    #         config.rcnn_smooth_l1_beta)
+    #     loss = cls_loss + rcnn_bbox_loss
+    #     loss = loss.reshape(-1, 2).sum(axis=1)
+    #     return loss
+
+    # def compute_gemini_loss(self, prob, bbox_targets, labels):
+
+    #     c = prob.shape[1]
+    #     prob = prob.reshape(-1, 2, c).transpose(1, 0, 2)
+    #     a, b = prob[0], prob[1]
+    #     loss0 = self.compute_emd_loss(a, b, bbox_targets, labels)
+    #     loss1 = self.compute_emd_loss(b, a, bbox_targets, labels)
+    #     loss = F.stack([loss0, loss1], axis=1)
+    #     vlabel = (labels > -1).reshape(-1, 2).sum(axis=1) > 1
+    #     emd_loss = loss.min(axis=1).sum() / F.maximum(vlabel.sum(), 1)
+    #     return emd_loss
+
+
+

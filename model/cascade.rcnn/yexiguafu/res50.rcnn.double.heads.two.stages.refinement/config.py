@@ -62,16 +62,17 @@ class Config:
     weight_decay = 1e-4
 
     warm_iters = 800
-    max_epoch = 35
+    max_epoch = 30
     lr_decay_rate = 0.1
     lr_decay_sates = [20, 26]
     nr_images_epoch = 15000
 
+    #base_lr = 1e-3 * train_batch_per_gpu * 1.25
     log_dump_interval = 1
 
     # ----------test config---------- #
     test_cls_threshold = 0.05
-    test_nms_version = 'normal_nms'
+    test_nms_version = 'set_nms'
     test_max_boxes_per_image = 300 #200
     test_save_type = 'human'
     test_nms = 0.5
@@ -80,7 +81,6 @@ class Config:
     # ----------model config---------- #
     batch_filter_box_size = 0
     nr_box_dim = 5
-    nr_info_dim = 6
     ignore_label = -1
     max_boxes_of_image = 500
 
@@ -95,7 +95,7 @@ class Config:
     rpn_nms_threshold = 0.7
     train_prev_nms_top_n = 12000
     train_post_nms_top_n = 2000
-    test_prev_nms_top_n = 6000
+    test_prev_nms_top_n = 8000
     test_post_nms_top_n = 1500
 
     # ----------binding&training config---------- #

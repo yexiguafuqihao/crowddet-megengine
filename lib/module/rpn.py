@@ -1,11 +1,10 @@
 import numpy as np
 import megengine.functional as F
 import megengine.module as M
-
 from config import config
-from det_opr.anchors_generator import AnchorGenerator
-from det_opr.find_top_rpn_proposals import find_top_rpn_proposals
-from det_opr.fpn_anchor_target import fpn_anchor_target, fpn_rpn_reshape
+from .anchors_generator import AnchorGenerator
+from .find_top_rpn_proposals import find_top_rpn_proposals
+from .fpn_anchor_target import fpn_anchor_target, fpn_rpn_reshape
 from det_opr.loss_opr import softmax_loss, smooth_l1_loss_rpn
 import pdb
 class RPN(M.Module):
