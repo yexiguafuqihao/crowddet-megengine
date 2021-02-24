@@ -9,14 +9,14 @@ import megengine as mge
 from megengine import jit
 from config import config
 import network
-import dataset
+from dataset import dataset
 from nms_wrapper import nms
-#from set_nms_utils import set_cpu_nms as emd_cpu_nms
+from set_cpu_nms import emd_cpu_nms
 from misc_utils import ensure_dir, load_json_lines, save_json_lines
 from megengine.core._imperative_rt.utils import Logger
 import pdb
-Logger.set_log_level(Logger.LogLevel.Error)
 
+Logger.set_log_level(Logger.LogLevel.Error)
 def eval_all(model_file, records, args):
         
     assert osp.exists(model_file)
@@ -90,26 +90,24 @@ def inference(model_file, device, records, result_queue):
 
         cls_dets = pred_bbox[:, :4] / scale
 
-        pred_boxes = np.hstack([cls_dets, pred_bbox[:,4:5]])
         if config.test_nms_version == 'set_nms':
-            n = pred_boxes.shape[0] // 2
-            idents = np.tile(np.linspace(0, n-1, n).reshape(-1, 1), (1, 2)).reshape(-1, 1)
-            pred_boxes = np.hstack([pred_boxes, idents])
+            n = cls_dets.shape[0] // 2
+            idents = np.tile(np.linspace(0, n-1, n).reshape(-1, 1),(1, 2)).reshape(-1, 1)
+            pred_boxes = np.hstack([cls_dets, pred_bbox[:,4:5], idents])
             flag = pred_boxes[:, 4] >= config.test_cls_threshold
             cls_dets = pred_boxes[flag]
             keep = emd_cpu_nms(cls_dets, config.test_nms)
             cls_dets = cls_dets[keep, :5].astype(np.float64)
-        
-        elif config.test_nms_version == 'normal_nms':
 
+        elif config.test_nms_version == 'normal_nms':
+            pred_boxes = np.hstack([cls_dets, pred_bbox[:, 4:5]])
             flag = pred_boxes[:, 4] >= config.test_cls_threshold
             cls_dets = pred_boxes[flag]
-            keep = nms(cls_dets.astype(np.float32), 0.5)
+            keep = nms(cls_dets.astype(np.float32), config.test_nms)
             cls_dets = cls_dets[keep, :5].astype(np.float64)
-
         else:
             raise NotImplementedError('the results should be post processed.')
-        
+
         pred_tags = np.ones([cls_dets.shape[0],]).astype(np.float64)
         gt_boxes = gt_boxes.astype(np.float64)
 
