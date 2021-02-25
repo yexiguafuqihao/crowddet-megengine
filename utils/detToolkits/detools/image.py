@@ -61,15 +61,6 @@ class ImageBase(object):
             img = None
             assert osp.exists(imgpath)
             img = cv2.imread(imgpath)
-            # if os.path.isfile(imgpath):
-            #     img = cv2.imread(imgpath)
-            # elif os.path.exists(self.nori_path) and self.nori_id is not None:
-            #     import numpy as np
-            #     import nori2 as nori
-            #     with nori.open(self.nori_path, 'r') as nr:
-            #         rawd = nr.get(self.nori_id)
-            #         #img = cv2.imdecode(np.fromstring(rawd, dtype=np.uint8), -1)
-            #         img = cv2.imdecode(np.fromstring(rawd, dtype=np.uint8))
             self._width, self._height = img.shape[1], img.shape[0]
         return self._width, self._height
 
