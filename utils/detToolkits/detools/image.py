@@ -27,8 +27,7 @@ class ImageBase(object):
         self._ignNum = None
         self._gtNum = None
         self._dtNum = None
-        self.nori_path = None
-        self.nori_id = None
+
 
     def __str__(self):
         return str(self.dumpOdf("all"))
