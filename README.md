@@ -53,23 +53,20 @@ year = {2020}
     python3 demo.py
     ```
 
-<!-- # Models
+# Models
 
-This proiect is a re-implementation based on Pytorch.
-We use pre-trained model from [MegEngine Model Hub](https://megengine.org.cn/model-hub) and convert this model to pytorch. You can get this model from [GoogleDrive](https://drive.google.com/file/d/1lfYQHC63oM2Dynbfj6uD7XnpDIaA5kNr/view?usp=sharing) or [Baidu Netdisk](https://pan.baidu.com/s/1U3I-qNIrXuYQzUEDDdISTw)(code:yx46).
-| Model | Top1 acc | Top5 acc |
-| --- | --- | --- |
-| ResNet50 | 76.254 | 93.056 |
+This proiect is a re-implementation based on Megengine.
+We use pre-trained model from [MegEngine Model Hub](https://megengine.org.cn/model-hub). You can get this model from [GoogleDrive]().
 
 All models are re-trained based on [ResNet-50](https://arxiv.org/pdf/1512.03385.pdf).
 
 | | mAP | mMR | mJI | Model
 | --- | --- | --- | --- | --- |
-| RCNN FPN Baseline | 0.8708 | 0.4262 | 0.7973 | [rcnn_fpn_baseline.pth](https://drive.google.com/file/d/1WxC8HWOc89nFCvPmHDGPtRoFeoc-IXts/view?usp=sharing) |
-| RCNN EMD Simple   | 0.9027 | 0.4208 | 0.8246 | [rcnn_emd_simple.pth](https://drive.google.com/file/d/1S8nHUM3smevg3UJQ_5hXGQm_E4_xkOsG/view?usp=sharing) |
-| RCNN EMD with RM  | 0.9041 | 0.4145 | 0.8251 | [rcnn_emd_refine.pth](https://drive.google.com/file/d/1OnHAN0RktBeYiZqAZqlb3yFFE8lVU-cG/view?usp=sharing) |
-| Cascade FPN RCNN Baseline    | 0.8677 | 0.4065 | 0.8038 | [cascade_rcnn_fpn_baseline.pth](https://drive.google.com/file/d/1A7kczuz34gdzZqhsGnSzLbV84LYddTlF/view?usp=sharing) |
-| Cascade FPN RCNN EMD Simple  | 0.9048 | 0.4022 | 0.8314 | [cascade_rcnn_emd_simple.pth](https://drive.google.com/file/d/1dCDN5ntfSm_940O2pe7spQ20u2sjVhZ5/view?usp=sharing) |
-| Cascade FPN RCNN EMD with RM | 0.9047 | 0.3987 | 0.8272 | [cascade_rcnn_emd_refine.pth](https://drive.google.com/file/d/1WtpH4WZmqdFoGyyhQ-hda213QmhNXWVz/view?usp=sharing) |
-| RetinaNet FPN Baseline | 0.8793 | 0.4753 | 0.7729 | [retinanet_baseline.pth](https://drive.google.com/file/d/10oYq6gjcW8UQysZK5lML0ahWBzH-yHBS/view?usp=sharing) |
-| RetinaNet Simple       | 0.8988 | 0.4779 | 0.7931 | [retinanet_simple.pth](https://drive.google.com/file/d/10oYq6gjcW8UQysZK5lML0ahWBzH-yHBS/view?usp=sharing) -->
+| RCNN FPN Baseline | 0.8728 | 0.4397 | 0.7915 | [rcnn_fpn_baseline.mge](https://drive.google.com/file/d/1IPVkS-wJ9e1r-x1tASJ6jfWcT7n1fOJr/view?usp=sharing) |
+| RCNN EMD Simple   | 0.9002 | 0.4262 | 0.8217 | [rcnn_emd_simple.mge](https://drive.google.com/file/d/1rQrutc8GSawL7L2HWIv8BHd5VYy0WZFH/view?usp=sharing) |
+<!-- | RCNN EMD with RM  | 0. | 0. | 0. | [rcnn_emd_refine.mge]() | -->
+| Cascade FPN RCNN Baseline    | 0.8729 | 0.4264 | 0.8007 | [cascade_rcnn_fpn_baseline.mge](https://drive.google.com/file/d/1cFvP-bQRj09jdufkIwCNFVYZXej5dBX9/view?usp=sharing) |
+| Cascade FPN RCNN EMD Simple  | 0.8990 | 0.4065 | 0.8247 | [cascade_rcnn_emd_simple.mge](https://drive.google.com/file/d/11V0V220gQ6sEjwiZracBodMgjqU5la3l/view?usp=sharing) |
+| Cascade FPN RCNN EMD with RM | 0.9015 | 0.4032 | 0.8227 | [cascade_rcnn_emd_refine.mge](https://drive.google.com/file/d/1Cx7iyJGszruOjBEoi4V6jh9cUtpUj38k/view?usp=sharing) |
+| RetinaNet FPN Baseline | 0.8769 | 0.4826 | 0.7716 | [retinanet_baseline.mge](https://drive.google.com/file/d/1QepMqiWx_e6Wb-XU8IgdByHCxrL42nlh/view?usp=sharing) |
+| RetinaNet Simple       | 0.8977 | 0.4764 | 0.7919 | [retinanet_simple.pth](https://drive.google.com/file/d/1IjG092Ya0qPw-cQRwtG-8GfmcGVNiENi/view?usp=sharing)
