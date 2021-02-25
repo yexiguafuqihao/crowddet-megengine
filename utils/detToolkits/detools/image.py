@@ -57,8 +57,8 @@ class ImageBase(object):
         :return: the [width, height] of the image
         """
         if self._width is None or self._height is None:
-            imgpath = os.path.join(self.imgroot, self.fpath)
             img = None
+            imgpath = osp.join(self.imgroot, self.fpath)
             assert osp.exists(imgpath)
             img = cv2.imread(imgpath)
             self._width, self._height = img.shape[1], img.shape[0]
