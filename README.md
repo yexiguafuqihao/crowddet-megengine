@@ -68,4 +68,4 @@ All models are re-trained based on [ResNet-50](https://arxiv.org/pdf/1512.03385.
 | Cascade FPN RCNN EMD Simple  | 0.8990 | 0.4065 | 0.8247 | [cascade_rcnn_emd_simple.mge](https://drive.google.com/file/d/11V0V220gQ6sEjwiZracBodMgjqU5la3l/view?usp=sharing) |
 | Cascade FPN RCNN EMD with RM | 0.9015 | 0.4032 | 0.8227 | [cascade_rcnn_emd_refine.mge](https://drive.google.com/file/d/1Cx7iyJGszruOjBEoi4V6jh9cUtpUj38k/view?usp=sharing) |
 | RetinaNet FPN Baseline | 0.8769 | 0.4826 | 0.7716 | [retinanet_baseline.mge](https://drive.google.com/file/d/1QepMqiWx_e6Wb-XU8IgdByHCxrL42nlh/view?usp=sharing) |
-| RetinaNet Simple       | 0.8977 | 0.4764 | 0.7919 | [retinanet_simple.pth](https://drive.google.com/file/d/1IjG092Ya0qPw-cQRwtG-8GfmcGVNiENi/view?usp=sharing)
+| RetinaNet Simple       | 0.8977 | 0.4764 | 0.7919 | [retinanet_simple.mge](https://drive.google.com/file/d/1IjG092Ya0qPw-cQRwtG-8GfmcGVNiENi/view?usp=sharing)
