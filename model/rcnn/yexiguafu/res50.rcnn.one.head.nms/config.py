@@ -58,7 +58,7 @@ class Config:
     weight_decay = 1e-4
 
     warm_iters = 800
-    max_epoch = 30
+    max_epoch = 35
     lr_decay_rate = 0.1
     lr_decay_sates = [24, 27]
     nr_images_epoch = 15000
@@ -77,6 +77,7 @@ class Config:
     # ----------model config---------- #
     batch_filter_box_size = 0
     nr_box_dim = 5
+    nr_info_dim = 6
     ignore_label = -1
     max_boxes_of_image = 500
 

@@ -11,7 +11,6 @@ from megengine import distributed as dist
 from megengine import optimizer as optim
 import megengine.autodiff as autodiff
 from megengine import jit
-# import dataset
 import network
 from config import config as cfg
 from dataset.CrowdHuman import CrowdHuman
@@ -145,7 +144,6 @@ def worker(rank, gpu_num, args):
         model.load_state_dict(weights, strict=False)
     
     logger.info("Prepare dataset")
-    # train_loader = dataset.train_dataset(rank)
 
     train_dataset = CrowdHuman(cfg, if_train=True)
     train_sampler = data.Infinite(data.RandomSampler(
