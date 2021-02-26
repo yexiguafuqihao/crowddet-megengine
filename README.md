@@ -59,11 +59,11 @@ This proiect is a re-implementation based on Megengine.
 We use pre-trained model from [MegEngine Model Hub](https://megengine.org.cn/model-hub). You can get this model from [GoogleDrive]().
 
 All models are re-trained based on [ResNet-50](https://arxiv.org/pdf/1512.03385.pdf).
-<!--  -->
+
 | | mAP | mMR | mJI | Model
 | --- | --- | --- | --- | --- |
 | RCNN FPN Baseline | 0.8728 | 0.4397 | 0.7915 | [rcnn_fpn_baseline.mge](https://drive.google.com/file/d/1IPVkS-wJ9e1r-x1tASJ6jfWcT7n1fOJr/view?usp=sharing) |
-| RCNN EMD Simple   | 0.9002 | 0.4262 | 0.8217 | [rcnn_emd_simple.mge](https://drive.google.com/file/d/1rQrutc8GSawL7L2HWIv8BHd5VYy0WZFH/view?usp=sharing) |
+| RCNN EMD Simple   | 0.9006 | 0.4190 | 0.8255 | [rcnn_emd_simple.mge](https://drive.google.com/file/d/1rQrutc8GSawL7L2HWIv8BHd5VYy0WZFH/view?usp=sharing) |
 | RCNN EMD with RM  | 0.9045 | 0.4199 | 0.8268 | [rcnn_emd_refine.mge](https://drive.google.com/file/d/1kXaom5SyfOTIRpqlvLrmFoneHIzoS092/view?usp=sharing) |
 | Cascade FPN RCNN Baseline    | 0.8729 | 0.4264 | 0.8007 | [cascade_rcnn_fpn_baseline.mge](https://drive.google.com/file/d/1cFvP-bQRj09jdufkIwCNFVYZXej5dBX9/view?usp=sharing) |
 | Cascade FPN RCNN EMD Simple  | 0.8990 | 0.4065 | 0.8247 | [cascade_rcnn_emd_simple.mge](https://drive.google.com/file/d/11V0V220gQ6sEjwiZracBodMgjqU5la3l/view?usp=sharing) |

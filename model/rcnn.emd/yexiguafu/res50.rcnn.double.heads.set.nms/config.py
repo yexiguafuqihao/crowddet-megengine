@@ -75,6 +75,7 @@ class Config:
     # ----------model config---------- #
     batch_filter_box_size = 0
     nr_box_dim = 5
+    nr_info_dim = 6
     ignore_label = -1
     max_boxes_of_image = 500
 
