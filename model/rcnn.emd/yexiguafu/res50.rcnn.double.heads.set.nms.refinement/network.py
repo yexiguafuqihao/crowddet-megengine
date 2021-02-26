@@ -95,18 +95,53 @@ class RCNN(M.Module):
     def __init__(self):
         super().__init__()
         # roi head
+        self.refinement = True
         self.fc1 = M.Linear(256*7*7, 1024)
         self.fc2 = M.Linear(1024, 1024)
+        self.fc3 = M.Linear(1054, 1024) if self.refinement else None
+
+        self.relu = M.ReLU()
+
         self.n = config.num_classes
         self.a = M.Linear(1024, 5 * self.n)
         self.b = M.Linear(1024, 5 * self.n)
 
+        self.q = M.Linear(1024, 5 * self.n) if self.refinement else None
+        self.r = M.Linear(1024, 5 * self.n) if self.refinement else None
         self._init_weights()
 
     def _init_weights(self,):
+        
         for l in [self.fc1, self.fc2, self.a, self.b]:
             M.init.normal_(l.weight, std=0.01)
             M.init.fill_(l.bias, 0)
+
+        if self.refinement:
+            for l in [self.q, self.r, self.fc3]:
+                M.init.normal_(l.weight, std=0.01)
+                M.init.fill_(l.bias, 0)
+    
+    def refinement_module(self, prob, fc2):
+        
+        m = prob.reshape(-1, 5*self.n)
+        offsets, scores = m[:, :-self.n], m[:, -self.n:]
+        n = offsets.shape[0]
+        offsets = offsets.reshape(-1, self.n, 4)
+        cls_scores = F.expand_dims(F.softmax(scores, axis=1), axis=2)
+        pred_boxes = F.concat([offsets, cls_scores], axis=2)[:, 1]
+        n, c = pred_boxes.shape
+        pred_boxes = F.broadcast_to(F.expand_dims(pred_boxes, axis=1), (n, 6, c)).reshape(n,-1)
+
+        n, c = fc2.shape
+        fc3 = F.broadcast_to(F.expand_dims(fc2, axis=1), (n, 2, c)).reshape(-1, c)
+        fc3 = F.concat([fc3, pred_boxes], axis=1)
+        fc3 = self.relu(self.fc3(fc3))
+        fc3 = fc3.reshape(n, 2, -1).transpose(1, 0, 2)
+        
+        a = self.q(fc3[0])
+        b = self.r(fc3[1])
+        prob = F.stack([a, b], axis=1).reshape(-1, a.shape[1])
+        return prob
 
     def forward(self, fpn_fms, rcnn_rois, labels=None, bbox_targets=None):
         # stride: 64,32,16,8,4 -> 4, 8, 16, 32
@@ -123,13 +158,18 @@ class RCNN(M.Module):
         a = self.a(fc2)
         b = self.b(fc2)
         prob = F.stack([a, b], axis=1).reshape(-1, a.shape[1])
-
+        
+        if self.refinement:
+            final_prob = self.refinement_module(prob, fc2)
+        
         if self.training:
            
             emd_loss = self.compute_gemini_loss(prob, bbox_targets, labels)
-            
             loss_dict = {}
             loss_dict['loss_rcnn_emd'] = emd_loss
+            if self.refinement_module:
+                final_emd_loss = self.compute_gemini_loss(final_prob, bbox_targets, labels)
+                loss_dict['final_rcnn_emd'] = final_emd_loss
             return loss_dict
         else:
 
